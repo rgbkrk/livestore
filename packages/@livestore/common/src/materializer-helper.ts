@@ -18,6 +18,7 @@ export const getExecStatementsFromMaterializer = ({
   materializer,
   dbState,
   event,
+  clientId,
 }: {
   eventDef: EventDef.AnyWithoutFn
   materializer: Materializer
@@ -32,6 +33,7 @@ export const getExecStatementsFromMaterializer = ({
         decoded: undefined
         encoded: LiveStoreEvent.AnyEncoded | LiveStoreEvent.PartialAnyEncoded
       }
+  clientId: string
 }): ReadonlyArray<{
   statementSql: string
   bindValues: PreparedBindValues
@@ -69,6 +71,7 @@ export const getExecStatementsFromMaterializer = ({
       query,
       // TODO properly implement this
       currentFacts: new Map(),
+      clientId,
     }),
   )
 
@@ -79,7 +82,11 @@ export const getExecStatementsFromMaterializer = ({
 
     const writeTables = typeof statementRes === 'string' ? undefined : statementRes.writeTables
 
-    return { statementSql, bindValues: prepareBindValues(bindValues ?? {}, statementSql), writeTables }
+    return {
+      statementSql,
+      bindValues: prepareBindValues(bindValues ?? {}, statementSql),
+      writeTables,
+    }
   })
 }
 
@@ -93,6 +100,7 @@ export const makeMaterializerHash =
         materializer,
         dbState,
         event: { decoded: undefined, encoded: event },
+        clientId: event.clientId,
       })
       return Option.some(Hash.string(JSON.stringify(materializerResults)))
     }
@@ -120,9 +128,21 @@ const fromMaterializerResult = (
   }
   if (isQueryBuilder(materializerResult)) {
     const { query, bindValues } = materializerResult.asSql()
-    return [{ sql: query, bindValues: bindValues as BindValues, writeTables: undefined }]
+    return [
+      {
+        sql: query,
+        bindValues: bindValues as BindValues,
+        writeTables: undefined,
+      },
+    ]
   } else if (typeof materializerResult === 'string') {
-    return [{ sql: materializerResult, bindValues: {} as BindValues, writeTables: undefined }]
+    return [
+      {
+        sql: materializerResult,
+        bindValues: {} as BindValues,
+        writeTables: undefined,
+      },
+    ]
   } else {
     return [
       {
