@@ -191,6 +191,7 @@ export type Materializer<TEventDef extends EventDef.AnyWithoutFn = EventDef.AnyW
     eventDef: TEventDef
     /** Can be used to query the current state */
     query: MaterializerContextQuery
+    clientId: string
   },
 ) => SingleOrReadonlyArray<MaterializerResult>
 

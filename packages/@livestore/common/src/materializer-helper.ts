@@ -18,6 +18,7 @@ export const getExecStatementsFromMaterializer = ({
   materializer,
   dbState,
   event,
+  clientId,
 }: {
   eventDef: EventDef.AnyWithoutFn
   materializer: Materializer
@@ -28,10 +29,12 @@ export const getExecStatementsFromMaterializer = ({
         decoded: LiveStoreEvent.AnyDecoded | LiveStoreEvent.PartialAnyDecoded
         encoded: undefined
       }
+  clientId: string
     | {
         decoded: undefined
         encoded: LiveStoreEvent.AnyEncoded | LiveStoreEvent.PartialAnyEncoded
       }
+  clientId: string
 }): ReadonlyArray<{
   statementSql: string
   bindValues: PreparedBindValues
@@ -50,6 +53,7 @@ export const getExecStatementsFromMaterializer = ({
           query: string
           bindValues: ParamsObject
         }
+  clientId: string
       | QueryBuilder.Any,
   ) => {
     if (isQueryBuilder(rawQueryOrQueryBuilder)) {
@@ -69,6 +73,7 @@ export const getExecStatementsFromMaterializer = ({
       query,
       // TODO properly implement this
       currentFacts: new Map(),
+      clientId,
     }),
   )
 
@@ -93,7 +98,9 @@ export const makeMaterializerHash =
         materializer,
         dbState,
         event: { decoded: undefined, encoded: event },
-      })
+        clientId: event.clientId,
+      }
+  clientId: string)
       return Option.some(Hash.string(JSON.stringify(materializerResults)))
     }
 
@@ -129,7 +136,8 @@ const fromMaterializerResult = (
         sql: materializerResult.sql,
         bindValues: materializerResult.bindValues,
         writeTables: materializerResult.writeTables,
-      },
+      }
+  clientId: string,
     ]
   }
 }
@@ -148,17 +156,21 @@ const deepReplaceValue = <S, R>(input: any, searchValue: S, replaceValue: R): vo
     for (const i in input) {
       if (input[i] === searchValue) {
         input[i] = replaceValue
-      } else {
+      }
+  clientId: string else {
         deepReplaceValue(input[i], searchValue, replaceValue)
       }
+  clientId: string
     }
   } else if (typeof input === 'object' && input !== null) {
     for (const key in input) {
       if (input[key] === searchValue) {
         input[key] = replaceValue
-      } else {
+      }
+  clientId: string else {
         deepReplaceValue(input[key], searchValue, replaceValue)
       }
+  clientId: string
     }
   }
 }
