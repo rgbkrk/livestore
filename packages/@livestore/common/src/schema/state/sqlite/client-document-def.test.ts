@@ -1,13 +1,17 @@
-import { Schema } from '@livestore/utils/effect'
-import { describe, expect, test } from 'vitest'
+import { Schema } from "@livestore/utils/effect";
+import { describe, expect, test } from "vitest";
 
-import { tables } from '../../../__tests__/fixture.ts'
-import type * as LiveStoreEvent from '../../LiveStoreEvent.ts'
-import { ClientDocumentTableDefSymbol, clientDocument } from './client-document-def.ts'
+import { tables } from "../../../__tests__/fixture.ts";
+import type * as LiveStoreEvent from "../../LiveStoreEvent.ts";
+import {
+  ClientDocumentTableDefSymbol,
+  clientDocument,
+} from "./client-document-def.ts";
 
-describe('client document table', () => {
-  test('set event', () => {
-    expect(patchId(tables.UiState.set({ showSidebar: false }, 'session-1'))).toMatchInlineSnapshot(`
+describe("client document table", () => {
+  test("set event", () => {
+    expect(patchId(tables.UiState.set({ showSidebar: false }, "session-1")))
+      .toMatchInlineSnapshot(`
       {
         "args": {
           "id": "session-1",
@@ -18,9 +22,10 @@ describe('client document table', () => {
         "id": "00000000-0000-0000-0000-000000000000",
         "name": "UiStateSet",
       }
-    `)
+    `);
 
-    expect(patchId(tables.appConfig.set({ fontSize: 12, theme: 'dark' }))).toMatchInlineSnapshot(`
+    expect(patchId(tables.appConfig.set({ fontSize: 12, theme: "dark" })))
+      .toMatchInlineSnapshot(`
       {
         "args": {
           "id": "static",
@@ -32,29 +37,36 @@ describe('client document table', () => {
         "id": "00000000-0000-0000-0000-000000000000",
         "name": "AppConfigSet",
       }
-    `)
-  })
+    `);
+  });
 
-  describe('materializer', () => {
-    const forSchema = <T>(schema: Schema.Schema<T, any>, value: T, id?: string, options?: { partialSet?: boolean }) => {
+  describe("materializer", () => {
+    const forSchema = <T>(
+      schema: Schema.Schema<T, any>,
+      value: T,
+      id?: string,
+      options?: { partialSet?: boolean },
+    ) => {
       const Doc = clientDocument({
-        name: 'test',
+        name: "test",
         schema,
         default: { value },
         ...options,
-      })
+      });
 
-      const materializer = Doc[ClientDocumentTableDefSymbol].derived.setMaterializer
+      const materializer =
+        Doc[ClientDocumentTableDefSymbol].derived.setMaterializer;
 
       return materializer(Doc.set(value, id as any).args, {
         currentFacts: new Map(),
         query: {} as any, // unused
         eventDef: Doc[ClientDocumentTableDefSymbol].derived.setEventDef,
-      })
-    }
+        clientId: "test-client-id",
+      });
+    };
 
-    test('string value', () => {
-      expect(forSchema(Schema.String, 'hello', 'id1')).toMatchInlineSnapshot(`
+    test("string value", () => {
+      expect(forSchema(Schema.String, "hello", "id1")).toMatchInlineSnapshot(`
         {
           "bindValues": [
             "id1",
@@ -66,12 +78,14 @@ describe('client document table', () => {
             "test",
           },
         }
-      `)
-    })
+      `);
+    });
 
-    test('struct value (partial set=true)', () => {
+    test("struct value (partial set=true)", () => {
       expect(
-        forSchema(Schema.Struct({ a: Schema.String }), { a: 'hello' }, 'id1', { partialSet: true }),
+        forSchema(Schema.Struct({ a: Schema.String }), { a: "hello" }, "id1", {
+          partialSet: true,
+        }),
       ).toMatchInlineSnapshot(`
           {
             "bindValues": [
@@ -89,12 +103,14 @@ describe('client document table', () => {
               "test",
             },
           }
-        `)
-    })
+        `);
+    });
 
-    test('struct value (partial set=false)', () => {
+    test("struct value (partial set=false)", () => {
       expect(
-        forSchema(Schema.Struct({ a: Schema.String }), { a: 'hello' }, 'id1', { partialSet: false }),
+        forSchema(Schema.Struct({ a: Schema.String }), { a: "hello" }, "id1", {
+          partialSet: false,
+        }),
       ).toMatchInlineSnapshot(`
         {
           "bindValues": [
@@ -107,15 +123,19 @@ describe('client document table', () => {
             "test",
           },
         }
-      `)
-    })
+      `);
+    });
 
-    test('struct value (partial set=true) advanced', () => {
+    test("struct value (partial set=true) advanced", () => {
       expect(
         forSchema(
-          Schema.Struct({ a: Schema.String, b: Schema.String, c: Schema.Number }),
-          { a: 'hello', c: 123 } as any,
-          'id1',
+          Schema.Struct({
+            a: Schema.String,
+            b: Schema.String,
+            c: Schema.Number,
+          }),
+          { a: "hello", c: 123 } as any,
+          "id1",
           { partialSet: true },
         ),
       ).toMatchInlineSnapshot(`
@@ -137,15 +157,18 @@ describe('client document table', () => {
             "test",
           },
         }
-      `)
-    })
+      `);
+    });
 
-    test('struct value (partial set=true), explicit undefined, filter out undefined values', () => {
+    test("struct value (partial set=true), explicit undefined, filter out undefined values", () => {
       expect(
         forSchema(
-          Schema.Struct({ a: Schema.String.pipe(Schema.optional), b: Schema.String }),
-          { a: undefined, b: 'hello' },
-          'id1',
+          Schema.Struct({
+            a: Schema.String.pipe(Schema.optional),
+            b: Schema.String,
+          }),
+          { a: undefined, b: "hello" },
+          "id1",
           {
             partialSet: true,
           },
@@ -167,14 +190,19 @@ describe('client document table', () => {
             "test",
           },
         }
-      `)
-    })
+      `);
+    });
 
-    test('struct value (partial set=true), explicit undefined, nothing to update', () => {
+    test("struct value (partial set=true), explicit undefined, nothing to update", () => {
       expect(
-        forSchema(Schema.Struct({ a: Schema.String.pipe(Schema.optional) }), { a: undefined }, 'id1', {
-          partialSet: true,
-        }),
+        forSchema(
+          Schema.Struct({ a: Schema.String.pipe(Schema.optional) }),
+          { a: undefined },
+          "id1",
+          {
+            partialSet: true,
+          },
+        ),
       ).toMatchInlineSnapshot(`
         {
           "bindValues": [
@@ -190,15 +218,18 @@ describe('client document table', () => {
             "test",
           },
         }
-      `)
-    })
+      `);
+    });
 
-    test('struct union value', () => {
+    test("struct union value", () => {
       expect(
         forSchema(
-          Schema.Union(Schema.Struct({ a: Schema.String }), Schema.Struct({ b: Schema.String })),
-          { a: 'hello' },
-          'id1',
+          Schema.Union(
+            Schema.Struct({ a: Schema.String }),
+            Schema.Struct({ b: Schema.String }),
+          ),
+          { a: "hello" },
+          "id1",
         ),
       ).toMatchInlineSnapshot(`
         {
@@ -212,11 +243,12 @@ describe('client document table', () => {
             "test",
           },
         }
-      `)
-    })
+      `);
+    });
 
-    test('array value', () => {
-      expect(forSchema(Schema.Array(Schema.String), ['hello', 'world'], 'id1')).toMatchInlineSnapshot(`
+    test("array value", () => {
+      expect(forSchema(Schema.Array(Schema.String), ["hello", "world"], "id1"))
+        .toMatchInlineSnapshot(`
         {
           "bindValues": [
             "id1",
@@ -228,13 +260,13 @@ describe('client document table', () => {
             "test",
           },
         }
-      `)
-    })
-  })
-})
+      `);
+    });
+  });
+});
 
 const patchId = (muationEvent: LiveStoreEvent.PartialAnyDecoded) => {
   // TODO use new id paradigm
-  const id = `00000000-0000-0000-0000-000000000000`
-  return { ...muationEvent, id }
-}
+  const id = `00000000-0000-0000-0000-000000000000`;
+  return { ...muationEvent, id };
+};
